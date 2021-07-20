@@ -3,6 +3,7 @@ use std::fs::{create_dir_all, File, OpenOptions};
 use std::io::{Read, Write};
 use std::marker::PhantomData;
 use std::path::PathBuf;
+use std::sync::Mutex;
 
 /*
 use crate::backends::{backend, compile};
@@ -38,6 +39,7 @@ pub struct CosmCache<S: Storage + 'static, A: Api + 'static, Q: Querier + 'stati
     type_storage: PhantomData<S>,
     type_api: PhantomData<A>,
     type_querier: PhantomData<Q>,
+    m: Mutex<()>,
 }
 
 impl<S, A, Q> CosmCache<S, A, Q>
@@ -78,10 +80,12 @@ where
             type_storage: PhantomData::<S>,
             type_api: PhantomData::<A>,
             type_querier: PhantomData::<Q>,
+            m: Mutex::new(()),
         })
     }
 
     pub fn save_wasm(&mut self, wasm: &[u8]) -> VmResult<Checksum> {
+        let _lock = self.m.lock().unwrap();
         check_wasm(wasm, &self.supported_features)?;
         let checksum = save_wasm_to_disk(&self.wasm_path, wasm)?;
         /*
@@ -97,6 +101,7 @@ where
     ///
     /// If the given ID is not found or the content does not match the hash (=ID), an error is returned.
     pub fn load_wasm(&self, checksum: &Checksum) -> VmResult<Vec<u8>> {
+        let _lock = self.m.lock().unwrap();
         let code = load_wasm_from_disk(&self.wasm_path, checksum)?;
         // verify hash matches (integrity check)
         if Checksum::generate(&code) != *checksum {
@@ -114,6 +119,7 @@ where
         deps: Extern<S, A, Q>,
         gas_limit: u64,
     ) -> VmResult<Instance<S, A, Q>> {
+        let _lock = self.m.lock().unwrap();
         /*
         // try from the module cache
         let res = self.modules.load_with_backend(checksum, backend());
@@ -168,7 +174,7 @@ fn load_wasm_from_disk<P: Into<PathBuf>>(dir: P, checksum: &Checksum) -> VmResul
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::calls::{call_handle, call_init};
+    use crate::calls::{call_handle_raw, call_init_raw};
     use crate::errors::VmError;
     use crate::features::features_from_csv;
     use crate::testing::{mock_dependencies, mock_env, MockApi, MockQuerier, MockStorage};
