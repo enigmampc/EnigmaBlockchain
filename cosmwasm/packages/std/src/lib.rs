@@ -20,8 +20,9 @@ pub use crate::coins::{coin, coins, has_coins, Coin};
 pub use crate::encoding::Binary;
 pub use crate::errors::{StdError, StdResult, SystemError, SystemResult};
 pub use crate::init_handle::{
-    log, BankMsg, Context, CosmosMsg, GovMsg, HandleResponse, HandleResult, InitResponse,
-    InitResult, LogAttribute, MigrateResponse, MigrateResult, StakingMsg, VoteOption, WasmMsg,
+    log, plaintext_log, BankMsg, Context, CosmosMsg, GovMsg, HandleResponse, HandleResult,
+    InitResponse, InitResult, LogAttribute, MigrateResponse, MigrateResult, StakingMsg, VoteOption,
+    WasmMsg,
 };
 #[cfg(feature = "iterator")]
 pub use crate::iterator::{Order, KV};

@@ -105,7 +105,7 @@ pub fn encrypt_output(
                 }
             }
 
-            for log in &mut ok.log {
+            for log in ok.log.iter_mut().filter(|log| log.encrypted) {
                 log.key = encrypt_preserialized_string(&key, &log.key)?;
                 log.value = encrypt_preserialized_string(&key, &log.value)?;
             }

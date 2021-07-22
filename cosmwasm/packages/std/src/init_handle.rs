@@ -141,6 +141,7 @@ impl<T: Clone + fmt::Debug + PartialEq + JsonSchema> From<WasmMsg> for CosmosMsg
 pub struct LogAttribute {
     pub key: String,
     pub value: String,
+    pub encrypted: bool,
 }
 
 /// A shorthand to produce a log attribute
@@ -148,6 +149,16 @@ pub fn log<K: ToString, V: ToString>(key: K, value: V) -> LogAttribute {
     LogAttribute {
         key: key.to_string(),
         value: value.to_string(),
+        encrypted: true,
+    }
+}
+
+/// A shorthand to produce a plaintext log attribute
+pub fn plaintext_log<K: ToString, V: ToString>(key: K, value: V) -> LogAttribute {
+    LogAttribute {
+        key: key.to_string(),
+        value: value.to_string(),
+        encrypted: false,
     }
 }
 
@@ -305,6 +316,10 @@ where
         self.log.push(log(key, value));
     }
 
+    pub fn add_plaintext_log<K: ToString, V: ToString>(&mut self, key: K, value: V) {
+        self.log.push(plaintext_log(key, value));
+    }
+
     pub fn add_message<U: Into<CosmosMsg<T>>>(&mut self, msg: U) {
         self.messages.push(msg.into());
     }
@@ -326,6 +341,7 @@ mod test {
         let expeceted = LogAttribute {
             key: "foo".to_string(),
             value: "42".to_string(),
+            encrypted: true,
         };
 
         assert_eq!(log("foo", "42"), expeceted);
@@ -357,6 +373,7 @@ mod test {
             log: vec![LogAttribute {
                 key: "action".to_string(),
                 value: "release".to_string(),
+                encrypted: true,
             }],
         });
         let bin = to_vec(&send).expect("encode contract result");

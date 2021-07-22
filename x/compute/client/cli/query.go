@@ -381,28 +381,26 @@ func GetQueryDecryptTxCmd(cdc *amino.Codec) *cobra.Command {
 							if a.Key != "contract_address" {
 								// key
 								if a.Key != "" {
+									// Try to decrypt the log key. If it doesn't look encrypted, leave it as-is
 									keyCiphertext, err := base64.StdEncoding.DecodeString(a.Key)
-									if err != nil {
-										return fmt.Errorf("error while trying to decode the log key '%s' from base64: %w", a.Key, err)
+									if err == nil {
+										keyPlaintext, err := wasmCtx.Decrypt(keyCiphertext, nonce)
+										if err == nil {
+											a.Key = string(keyPlaintext)
+										}
 									}
-									keyPlaintext, err := wasmCtx.Decrypt(keyCiphertext, nonce)
-									if err != nil {
-										return fmt.Errorf("error while trying to decrypt the log key '%s' from base64: %w", a.Key, err)
-									}
-									a.Key = string(keyPlaintext)
 								}
 
 								// value
 								if a.Value != "" {
+									// Try to decrypt the log value. If it doesn't look encrypted, leave it as-is
 									valueCiphertext, err := base64.StdEncoding.DecodeString(a.Value)
-									if err != nil {
-										return fmt.Errorf("error while trying to decode the log value '%s' from base64: %w", a.Value, err)
+									if err == nil {
+										valuePlaintext, err := wasmCtx.Decrypt(valueCiphertext, nonce)
+										if err == nil {
+											a.Value = string(valuePlaintext)
+										}
 									}
-									valuePlaintext, err := wasmCtx.Decrypt(valueCiphertext, nonce)
-									if err != nil {
-										return fmt.Errorf("error while trying to decrypt the log value '%s' from base64: %w", a.Value, err)
-									}
-									a.Value = string(valuePlaintext)
 								}
 
 								e.Attributes[i] = a

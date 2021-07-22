@@ -302,10 +302,24 @@ impl<T: Clone + fmt::Debug + PartialEq> From<WasmMsg> for CosmosMsg<T> {
     }
 }
 
+/// Return true
+///
+/// Only used for serde annotations
+fn bool_true() -> bool {
+    true
+}
+
 #[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
 pub struct LogAttribute {
     pub key: String,
     pub value: String,
+    /// nonstandard late addition, thus optional and only used in deserialization.
+    /// The contracts may return this in newer versions that support distinguishing
+    /// encrypted and plaintext logs. We naturally default to encrypted logs, and
+    /// don't serialize the field later so it doesn't leak up to the Go layers.
+    #[serde(default = "bool_true")]
+    #[serde(skip_serializing)]
+    pub encrypted: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -337,11 +351,21 @@ pub fn coin(amount: &str, denom: &str) -> Vec<Coin> {
     }]
 }
 
-// log is shorthand to produce log messages
-pub fn log(key: &str, value: &str) -> LogAttribute {
+/// A shorthand to produce a log attribute
+pub fn log<K: ToString, V: ToString>(key: K, value: V) -> LogAttribute {
     LogAttribute {
         key: key.to_string(),
         value: value.to_string(),
+        encrypted: true,
+    }
+}
+
+/// A shorthand to produce a plaintext log attribute
+pub fn plaintext_log<K: ToString, V: ToString>(key: K, value: V) -> LogAttribute {
+    LogAttribute {
+        key: key.to_string(),
+        value: value.to_string(),
+        encrypted: false,
     }
 }
 
